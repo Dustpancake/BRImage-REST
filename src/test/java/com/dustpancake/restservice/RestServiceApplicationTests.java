@@ -1,4 +1,4 @@
-package com.learning.restservice;
+package com.dustpancake.restservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

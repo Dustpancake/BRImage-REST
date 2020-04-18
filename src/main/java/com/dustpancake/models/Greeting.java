@@ -1,4 +1,4 @@
-package com.learning.restservice;
+package com.dustpancake.models;
 
 public class Greeting {
 	private final long id;

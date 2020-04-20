@@ -10,13 +10,21 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.dustpancake.models.MethodInterface;
+
+import com.dustpancake.awsintegration.AWSContext;
+import com.dustpancake.awsintegration.AWSs3;
+
 import com.dustpancake.imageio.FrequencyModulation;
 import com.dustpancake.imageio.ImageProcessor;
 
+
 @RestController
 public class ImageController {
-	private static final String template = "%s";
+	@Autowired 
+	private AWSContext awscontext;
 
 	@GetMapping("/interface/{method}")
 	public MethodInterface getInterface(@PathVariable("method") String method) {
@@ -43,7 +51,9 @@ public class ImageController {
 		}
 
 		if (ip.processBody()) {
-			ip.process();
+			String uri = ip.getUri();
+			AWSs3 s3 = awscontext.S3Context();
+			s3.getFile(uri);
 
 		} else {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("BAD BODY");

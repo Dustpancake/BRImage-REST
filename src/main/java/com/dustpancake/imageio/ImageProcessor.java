@@ -78,6 +78,10 @@ public abstract class ImageProcessor {
 		return keys;
 	}
 
+	public String getUri() {
+		return inputUri;
+	}
+
 	public String getParamsJSON() {
 		JSONObject jobj = new JSONObject();
 		for (int i = 0; i < values.size(); i++) {

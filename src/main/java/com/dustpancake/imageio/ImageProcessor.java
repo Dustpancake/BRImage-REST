@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import java.lang.Runtime;
 import java.lang.Process;
+import java.lang.InterruptedException;
 
 import java.io.IOException;
 
@@ -18,8 +19,13 @@ import org.json.JSONException;
 public abstract class ImageProcessor {
 	protected final String jsonBody;
 	protected String inputUri;
+	protected String cmd;
+	protected Process p;
 	protected List<String> keys;
 	protected List<Double> values;
+	protected String info;
+
+	public final String outputName = "testAsync.jpg";
 
 	private String buildCmd(String inputImage) {
 		String cmd = "brimage " + inputImage;
@@ -34,20 +40,27 @@ public abstract class ImageProcessor {
 		values = new ArrayList<>();
 	}
 
-	public void process() {
-		// TODO
-		// fetch image from uri
-		String cmd = buildCmd(inputUri) + "-o test.jpg";
-		// get new URI
+	public void process(String uri) {
+		cmd = buildCmd(inputUri) + "-o " + outputName;
 		try {
-			Process p = Runtime.getRuntime().exec(cmd);
+			p = Runtime.getRuntime().exec(cmd);
 		} catch(IOException e) {
 			System.out.println(e);
 		}
-		// return URI
 	}
 
-	public boolean processBody() {
+	public int finish() {
+		int retval;
+		try {
+			retval = p.waitFor();
+		} catch(InterruptedException e) {
+			System.out.println(e);
+			retval = 1;
+		}
+		return retval;
+	}
+
+	public String processBody() {
 		JSONObject jobj = new JSONObject(jsonBody);
 		String value;
 		ListIterator<String> iter = keys.listIterator();
@@ -55,7 +68,7 @@ public abstract class ImageProcessor {
 		try {
 			inputUri = jobj.getString("uri");
 		} catch(Exception e) {
-			return false;
+			return "NO URI";
 		}
 
 		while(iter.hasNext()) {
@@ -68,10 +81,14 @@ public abstract class ImageProcessor {
 				iter.remove();
 			} catch(Exception e) {
 				System.out.println(e);
-				return false;
+				return "BAD KEYS IN BODY";
 			}
 		}
-		return true;
+		return "";
+	}
+
+	public String info() {
+		return info;
 	}
 
 	public List<String> getKeys() {

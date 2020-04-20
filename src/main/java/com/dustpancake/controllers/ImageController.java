@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 
@@ -19,6 +20,8 @@ import com.dustpancake.awsintegration.AWSs3;
 
 import com.dustpancake.imageio.FrequencyModulation;
 import com.dustpancake.imageio.ImageProcessor;
+
+import java.lang.Thread;
 
 
 @RestController
@@ -43,23 +46,32 @@ public class ImageController {
 	@PostMapping("/image/{method}")
 	public ResponseEntity methodCaller(@PathVariable("method") String method, @RequestBody String body) {
 		ImageProcessor ip;
+		String newUri;
+		String resp;
 
 		if (method.equals("fm")) {
 			ip = new FrequencyModulation(body);
-		} else {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("BAD GLITCH METHOD");
-		}
 
-		if (ip.processBody()) {
-			String uri = ip.getUri();
-			AWSs3 s3 = awscontext.S3Context();
-			s3.getFile(uri);
+		} else return badResponse("BAD GLITCH METHOD");
 
-		} else {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("BAD BODY");
-		}
+		resp = ip.processBody();
+		if (!resp.equals("")) return badResponse(resp);
 
-		return ResponseEntity.ok("");
+		String uri = ip.getUri();
+		AWSs3 s3 = awscontext.S3Context();
+
+		resp = s3.getFile(ip.getUri());
+		if(!resp.equals("")) return badResponse(resp);
+
+		ip.process(uri);
+		new Thread(() -> {if ( ip.finish() == 0 ) s3.writeToBucket(ip.outputName);}).start();
+
+		return ResponseEntity.ok(
+			ip.outputName
+		);
 	}
 
+	private ResponseEntity badResponse(String body) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+	}
 }

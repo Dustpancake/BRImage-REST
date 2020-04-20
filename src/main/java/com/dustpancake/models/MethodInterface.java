@@ -7,6 +7,7 @@ import com.dustpancake.imageio.ImageProcessor;
 public class MethodInterface {
 	private ImageProcessor method;
 	private boolean badMethod;
+	private String info;
 
 	public MethodInterface(ImageProcessor method) {
 		this.method = method;
@@ -14,6 +15,7 @@ public class MethodInterface {
 	}
 
 	public MethodInterface() {
+		info = "BAD METHOD";
 		badMethod = true;
 	}
 
@@ -23,5 +25,9 @@ public class MethodInterface {
 		} else {
 			return method.getKeys();
 		}
+	}
+
+	public String getInfo() {
+		return info;
 	}
 }

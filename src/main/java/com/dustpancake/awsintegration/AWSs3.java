@@ -19,7 +19,7 @@ import java.io.IOException;
 
 public class AWSs3 {
 	final private AmazonS3 s3access;
-	private String bucketName = "brimage-bucket";
+	final private String bucketName = "brimage-bucket";
 
 	public AWSs3(AWSCredentialsProvider awscred) {
 		s3access = AmazonS3ClientBuilder
@@ -29,7 +29,7 @@ public class AWSs3 {
 			.build();
 	}
 
-	public void getFile(String key) {
+	public String getFile(String key) {
 		try {
 			S3Object o = s3access.getObject(bucketName, key);
 			S3ObjectInputStream s3inp = o.getObjectContent();
@@ -39,19 +39,31 @@ public class AWSs3 {
 		} catch(AmazonServiceException e) {
 			// aws went wrong
 			System.out.println(e);
+			return "AWS S3 ERROR";
 
 		} catch(IOException e) {
 			// file reading went wrong
 			System.out.println(e);
+			return "FILE IO ERROR";
 
 		} catch(Exception e) {
 			// anything else
 			System.out.println(e);
+			return "UNKNOWN FILE ERROR";
 		}
+
+		return "";
 	}
 
-	private void writeToBucket() {
-
+	public String writeToBucket(String fileName) {
+		try {
+			s3access.putObject(bucketName, fileName, new File(fileName));
+		} catch(AmazonServiceException e) {
+			// aws went wrong
+			System.out.println(e);
+			return "FILE ACCEPTED; UPLOAD ERROR";
+		}
+		return fileName;
 	}
 
 	private void writeToFile(S3ObjectInputStream s3inp, String fileName) throws IOException {

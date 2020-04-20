@@ -9,11 +9,11 @@ import org.json.JSONObject;
 
 public class FrequencyModulation extends ImageProcessor {
 	public FrequencyModulation() {
-		this("");
+		this("", "");
 	}
 
-	public FrequencyModulation(String body) {
-		super(body);
+	public FrequencyModulation(String body, String imageDirectory) {
+		super(body, imageDirectory);
 		keys = new ArrayList<>(Arrays.asList("omega", "phase", "lowpass", "pquantize"));
 	}
 

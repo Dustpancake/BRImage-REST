@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.dustpancake.models.MethodInterface;
 
@@ -28,6 +29,9 @@ import java.lang.Thread;
 public class ImageController {
 	@Autowired 
 	private AWSContext awscontext;
+
+	@Value("${image.directory}")
+	private String imageDirectory;
 
 	@GetMapping("/interface/{method}")
 	public MethodInterface getInterface(@PathVariable("method") String method) {
@@ -50,7 +54,7 @@ public class ImageController {
 		String resp;
 
 		if (method.equals("fm")) {
-			ip = new FrequencyModulation(body);
+			ip = new FrequencyModulation(body, imageDirectory);
 
 		} else return badResponse("BAD GLITCH METHOD");
 

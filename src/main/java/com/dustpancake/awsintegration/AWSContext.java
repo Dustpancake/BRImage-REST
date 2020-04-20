@@ -4,7 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.auth.AWSCredentialsProvider;
 
 import com.dustpancake.awsintegration.AWSs3;
@@ -15,7 +15,7 @@ public class AWSContext {
 	private AWSCredentialsProvider credentialsProvider;
 
 	public AWSContext() {
-		credentialsProvider = new ProfileCredentialsProvider();
+		credentialsProvider = new DefaultAWSCredentialsProviderChain();
 	}
 
 	@Bean

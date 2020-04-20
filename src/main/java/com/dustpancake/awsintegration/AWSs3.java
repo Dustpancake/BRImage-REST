@@ -12,6 +12,8 @@ import com.amazonaws.services.s3.model.S3ObjectInputStream;
 
 import com.amazonaws.regions.Regions;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -20,6 +22,9 @@ import java.io.IOException;
 public class AWSs3 {
 	final private AmazonS3 s3access;
 	final private String bucketName = "brimage-bucket";
+
+	@Value("${image.directory}")
+	private String imageDirectory;
 
 	public AWSs3(AWSCredentialsProvider awscred) {
 		s3access = AmazonS3ClientBuilder
@@ -33,7 +38,7 @@ public class AWSs3 {
 		try {
 			S3Object o = s3access.getObject(bucketName, key);
 			S3ObjectInputStream s3inp = o.getObjectContent();
-			writeToFile(s3inp, key);
+			writeToFile(s3inp, imageDirectory + key);
 			s3inp.close();
 
 		} catch(AmazonServiceException e) {
@@ -57,13 +62,13 @@ public class AWSs3 {
 
 	public String writeToBucket(String fileName) {
 		try {
-			s3access.putObject(bucketName, fileName, new File(fileName));
+			s3access.putObject(bucketName, fileName, new File(imageDirectory + fileName));
 		} catch(AmazonServiceException e) {
 			// aws went wrong
 			System.out.println(e);
 			return "FILE ACCEPTED; UPLOAD ERROR";
 		} finally {
-			new File(fileName).delete();
+			new File(imageDirectory + fileName).delete();
 		}
 		return fileName;
 	}

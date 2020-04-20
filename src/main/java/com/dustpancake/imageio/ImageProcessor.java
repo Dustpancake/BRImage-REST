@@ -17,9 +17,9 @@ import org.json.JSONException;
 
 import java.io.File;
 
-
 public abstract class ImageProcessor {
 	protected final String jsonBody;
+	protected final String imageDirectory;
 	protected String inputUri;
 	protected String cmd;
 	protected Process p;
@@ -28,6 +28,7 @@ public abstract class ImageProcessor {
 	protected String info;
 
 	public volatile String outputName;
+	
 
 	private String buildCmd(String inputImage) {
 		String cmd = "brimage " + inputImage;
@@ -37,7 +38,8 @@ public abstract class ImageProcessor {
 		return cmd + " ";
 	}
 	
-	public ImageProcessor(String jsonBody) {
+	public ImageProcessor(String jsonBody, String imageDirectory) {
+		this.imageDirectory = imageDirectory;
 		this.jsonBody = jsonBody;
 		values = new ArrayList<>();
 	}
@@ -45,7 +47,7 @@ public abstract class ImageProcessor {
 	public void process() {
 		// set new inputUri here;
 		outputName = "output_" + inputUri;
-		cmd = buildCmd(inputUri) + "-o " + outputName;
+		cmd = buildCmd(imageDirectory+inputUri) + "-o " + imageDirectory + outputName;
 		try {
 			p = Runtime.getRuntime().exec(cmd);
 		} catch(IOException e) {
@@ -61,7 +63,7 @@ public abstract class ImageProcessor {
 			System.out.println(e);
 			retval = 1;
 		} finally {
-			new File(inputUri).delete();
+			new File(imageDirectory + inputUri).delete();
 		}
 		return retval;
 	}

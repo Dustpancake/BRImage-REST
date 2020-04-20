@@ -11,7 +11,7 @@ FROM openjdk:8-jdk-alpine
 COPY --from=python / /
 ENV PATH=/root/.local/bin:$PATH
 
-#RUN addgroup -S spring && adduser -S spring -G spring
-#USER spring:spring
+RUN mkdir /images
+
 COPY ./build/libs/rest-service-0.0.1-SNAPSHOT.jar /app.jar
 ENTRYPOINT ["java","-jar","/app.jar"]

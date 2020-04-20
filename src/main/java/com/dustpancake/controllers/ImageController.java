@@ -57,14 +57,13 @@ public class ImageController {
 		resp = ip.processBody();
 		if (!resp.equals("")) return badResponse(resp);
 
-		String uri = ip.getUri();
 		AWSs3 s3 = awscontext.S3Context();
 
 		resp = s3.getFile(ip.getUri());
 		if(!resp.equals("")) return badResponse(resp);
 
-		ip.process(uri);
-		new Thread(() -> {if ( ip.finish() == 0 ) s3.writeToBucket(ip.outputName);}).start();
+		ip.process();
+		new Thread(() -> {if ( ip.finish() == 0 ) s3.writeToBucket(ip.outputName);} ).start();
 
 		return ResponseEntity.ok(
 			ip.outputName

@@ -15,6 +15,8 @@ import java.io.IOException;
 import org.json.JSONObject;
 import org.json.JSONException;
 
+import java.io.File;
+
 
 public abstract class ImageProcessor {
 	protected final String jsonBody;
@@ -25,7 +27,7 @@ public abstract class ImageProcessor {
 	protected List<Double> values;
 	protected String info;
 
-	public final String outputName = "testAsync.jpg";
+	public volatile String outputName;
 
 	private String buildCmd(String inputImage) {
 		String cmd = "brimage " + inputImage;
@@ -40,7 +42,9 @@ public abstract class ImageProcessor {
 		values = new ArrayList<>();
 	}
 
-	public void process(String uri) {
+	public void process() {
+		// set new inputUri here;
+		outputName = "output_" + inputUri;
 		cmd = buildCmd(inputUri) + "-o " + outputName;
 		try {
 			p = Runtime.getRuntime().exec(cmd);
@@ -56,6 +60,8 @@ public abstract class ImageProcessor {
 		} catch(InterruptedException e) {
 			System.out.println(e);
 			retval = 1;
+		} finally {
+			new File(inputUri).delete();
 		}
 		return retval;
 	}

@@ -62,6 +62,8 @@ public class AWSs3 {
 			// aws went wrong
 			System.out.println(e);
 			return "FILE ACCEPTED; UPLOAD ERROR";
+		} finally {
+			new File(fileName).delete();
 		}
 		return fileName;
 	}

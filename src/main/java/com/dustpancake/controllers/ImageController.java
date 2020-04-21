@@ -14,37 +14,33 @@ import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-import com.dustpancake.models.MethodInterface;
-
 import com.dustpancake.awsintegration.AWSContext;
 import com.dustpancake.awsintegration.AWSs3;
 
-import com.dustpancake.imageio.FrequencyModulation;
+import com.dustpancake.imageio.ImplementMethod;
 import com.dustpancake.imageio.ImageProcessor;
 
 import java.lang.Thread;
 
+import java.util.List;
+import java.util.LinkedHashMap;
+
+import com.dustpancake.propertyread.MethodReader;
 
 @RestController
 public class ImageController {
 	@Autowired 
 	private AWSContext awscontext;
 
+	@Autowired
+	private MethodReader methodReader;
+
 	@Value("${image.directory}")
 	private String imageDirectory;
 
 	@GetMapping("/interface/{method}")
-	public MethodInterface getInterface(@PathVariable("method") String method) {
-		/* fetch the image from uri and pass file descriptor to python cli */
-		MethodInterface mi;
-
-		if (method.equals("fm")) {
-			mi = new MethodInterface(new FrequencyModulation());
-		} else {
-			mi = new MethodInterface();
-		}
-
-		return mi;
+	public LinkedHashMap<String, ?> getInterface(@PathVariable("method") String method) {
+		return methodReader.getInterface(method);
 	}
 
 	@PostMapping("/image/{method}")
@@ -53,24 +49,38 @@ public class ImageController {
 		String newUri;
 		String resp;
 
-		if (method.equals("fm")) {
-			ip = new FrequencyModulation(body, imageDirectory);
+		try {
+			ip = new ImplementMethod(
+				body, 
+				imageDirectory, 
+				methodReader.getConfigOf("fm")
+			);
 
-		} else return badResponse("BAD GLITCH METHOD");
+		} catch(Exception e) { 
+			return badResponse("BAD GLITCH METHOD");
+		}
 
-		resp = ip.processBody();
-		if (!resp.equals("")) return badResponse(resp);
+		if (!ip.processBody()) return badResponse(ip.info());
 
 		AWSs3 s3 = awscontext.S3Context();
 
-		resp = s3.getFile(ip.getUri());
+		resp = s3.getFile(ip.inputUri);
 		if(!resp.equals("")) return badResponse(resp);
 
-		ip.process();
-		new Thread(() -> {if ( ip.finish() == 0 ) s3.writeToBucket(ip.outputName);} ).start();
+		
+		newUri = s3.touchBucketFile(ip.outputName);
+		if (resp.equals("AWS_ERROR")) return badResponse(resp);
+
+		new Thread(() -> { 
+			if ( ip.process() == 0 ) 
+				s3.uploadFileToBucket(ip.outputName);
+			else {
+				System.out.println("BRIMAGE CRASH");
+			}
+		}).start();
 
 		return ResponseEntity.ok(
-			ip.outputName
+			newUri
 		);
 	}
 

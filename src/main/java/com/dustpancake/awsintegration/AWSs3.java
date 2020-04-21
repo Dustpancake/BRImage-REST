@@ -5,7 +5,7 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.AmazonServiceException;
 
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
 
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
@@ -20,14 +20,16 @@ import java.io.IOException;
 
 
 public class AWSs3 {
-	final private AmazonS3 s3access;
-	final private String bucketName = "brimage-bucket";
+	final private AmazonS3Client s3access;
+
+	@Value("${bucket.name}")
+	private String bucketName;
 
 	@Value("${image.directory}")
 	private String imageDirectory;
 
 	public AWSs3(AWSCredentialsProvider awscred) {
-		s3access = AmazonS3ClientBuilder
+		s3access = (AmazonS3Client)AmazonS3ClientBuilder
 			.standard()
 			.withCredentials(awscred)
 			.withRegion(Regions.EU_WEST_1)
@@ -60,17 +62,30 @@ public class AWSs3 {
 		return "";
 	}
 
-	public String writeToBucket(String fileName) {
+	public String touchBucketFile(String fileName) {
+		String itemUrl;
+		try {
+			s3access.putObject(bucketName, fileName, "");
+			itemUrl = s3access.getResourceUrl(bucketName, fileName);
+		} catch(AmazonServiceException e) {
+			// aws went wrong
+			System.out.println(e);
+			return "AWS_ERROR";
+		}
+		return itemUrl;
+	}
+
+	public boolean uploadFileToBucket(String fileName) {
 		try {
 			s3access.putObject(bucketName, fileName, new File(imageDirectory + fileName));
 		} catch(AmazonServiceException e) {
 			// aws went wrong
 			System.out.println(e);
-			return "FILE ACCEPTED; UPLOAD ERROR";
+			return false;
 		} finally {
 			new File(imageDirectory + fileName).delete();
 		}
-		return fileName;
+		return true;
 	}
 
 	private void writeToFile(S3ObjectInputStream s3inp, String fileName) throws IOException {

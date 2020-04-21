@@ -5,35 +5,47 @@ import com.dustpancake.models.ImageResponse;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.ArrayList;
+import java.util.Base64;
 
 import java.lang.Runtime;
 import java.lang.Process;
 import java.lang.InterruptedException;
 
 import java.io.IOException;
+import java.io.File;
 
 import org.json.JSONObject;
 import org.json.JSONException;
 
-import java.io.File;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 
 public abstract class ImageProcessor {
 	protected final String jsonBody;
 	protected final String imageDirectory;
-	protected String inputUri;
 	protected String cmd;
 	protected Process p;
 	protected List<String> keys;
 	protected List<Double> values;
+	protected List<String> types;
 	protected String info;
 
 	public volatile String outputName;
+	public volatile String inputUri;
 	
 
 	private String buildCmd(String inputImage) {
 		String cmd = "brimage " + inputImage;
+		String paramVal = "0";
 		for (int i = 0; i < values.size(); i++) {
-			cmd += " --" + keys.get(i) + " " + String.valueOf(values.get(i));
+			System.out.println(types.get(i));
+			if (types.get(i).equals("double")) {
+				paramVal = String.valueOf((double)values.get(i));
+			} else if (types.get(i).equals("int")) {
+				paramVal = String.valueOf((int)((double)values.get(i)));
+			}
+			cmd += " --" + keys.get(i) + " " + paramVal;
 		}
 		return cmd + " ";
 	}
@@ -44,18 +56,20 @@ public abstract class ImageProcessor {
 		values = new ArrayList<>();
 	}
 
-	public void process() {
-		// set new inputUri here;
-		outputName = "output_" + inputUri;
+	public int process() {
 		cmd = buildCmd(imageDirectory+inputUri) + "-o " + imageDirectory + outputName;
+		System.out.println("Executing " + cmd);
 		try {
 			p = Runtime.getRuntime().exec(cmd);
 		} catch(IOException e) {
 			System.out.println(e);
+			return 1;
 		}
+
+		return finish();
 	}
 
-	public int finish() {
+	private int finish() {
 		int retval;
 		try {
 			retval = p.waitFor();
@@ -68,7 +82,7 @@ public abstract class ImageProcessor {
 		return retval;
 	}
 
-	public String processBody() {
+	public boolean processBody() {
 		JSONObject jobj = new JSONObject(jsonBody);
 		String value;
 		ListIterator<String> iter = keys.listIterator();
@@ -76,23 +90,53 @@ public abstract class ImageProcessor {
 		try {
 			inputUri = jobj.getString("uri");
 		} catch(Exception e) {
-			return "NO URI";
+			info = "NO URI";
+			return false;
 		}
 
+		generateOutput();
+		if (outputName.equals("")){
+			info = "BAD FILE CHECKSUM";
+			return false;
+		}
+		String key;
 		while(iter.hasNext()) {
 			try {
-				value = jobj.getString(iter.next());
+				key = iter.next();
+				value = jobj.getString(key);
 				values.add(Double.parseDouble(value));
+				jobj.remove(key);
 			} catch(JSONException e) {
+				System.out.println(e);
 				iter.remove();
 			} catch(NullPointerException e) {
 				iter.remove();
 			} catch(Exception e) {
 				System.out.println(e);
-				return "BAD KEYS IN BODY";
+				info = "ERROR";
+				return false;
 			}
 		}
-		return "";
+
+		if (jobj.length() != 1) {
+			info = "BAD KEYS";
+			return false;
+		}
+
+		return true;
+	}
+
+	private void generateOutput() {
+		MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("MD5");
+		} catch(NoSuchAlgorithmException e) {
+			outputName = "";
+			return;
+		}
+		md.update(inputUri.getBytes());
+		byte[] digest = md.digest(inputUri.getBytes());
+		outputName =  Base64.getEncoder().encodeToString(digest) + ".jpg";
 	}
 
 	public String info() {
@@ -101,10 +145,6 @@ public abstract class ImageProcessor {
 
 	public List<String> getKeys() {
 		return keys;
-	}
-
-	public String getUri() {
-		return inputUri;
 	}
 
 	public String getParamsJSON() {

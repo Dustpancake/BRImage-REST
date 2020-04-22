@@ -16,8 +16,12 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
+import java.net.URL;
+import java.net.MalformedURLException;
 
 public class AWSs3 {
 	final private AmazonS3Client s3access;
@@ -36,30 +40,28 @@ public class AWSs3 {
 			.build();
 	}
 
-	public String getFile(String key) {
+	public String getFile(String uri) {
+		String fileName = "";
 		try {
-			S3Object o = s3access.getObject(bucketName, key);
-			S3ObjectInputStream s3inp = o.getObjectContent();
-			writeToFile(s3inp, imageDirectory + key);
-			s3inp.close();
+			URL url = new URL(uri);
+			fileName = writeImageToFile(url);
+			System.out.println("Saved new file " + fileName);
 
-		} catch(AmazonServiceException e) {
-			// aws went wrong
+		} catch(MalformedURLException e) {
 			System.out.println(e);
-			return "AWS S3 ERROR";
+			return "";
 
-		} catch(IOException e) {
+		}  catch(IOException e) {
 			// file reading went wrong
 			System.out.println(e);
-			return "FILE IO ERROR";
+			return "";
 
 		} catch(Exception e) {
 			// anything else
 			System.out.println(e);
-			return "UNKNOWN FILE ERROR";
+			return "";
 		}
-
-		return "";
+		return fileName;
 	}
 
 	public String touchBucketFile(String fileName) {
@@ -88,14 +90,21 @@ public class AWSs3 {
 		return true;
 	}
 
-	private void writeToFile(S3ObjectInputStream s3inp, String fileName) throws IOException {
-		FileOutputStream fos = new FileOutputStream(new File(fileName));
+	private String writeImageToFile(URL uri) throws IOException {
+		String fileName = uri.getFile();
+		fileName = fileName.substring(fileName.lastIndexOf('/') + 1).replaceAll("[^\\w\\s]","");
+		BufferedInputStream bif = new BufferedInputStream(uri.openStream());
+		writeImageToFile(bif, imageDirectory + fileName);
+		return fileName;
+	}
+
+	private static <T extends InputStream> void writeImageToFile(T reader, String fileName) throws IOException {
+		FileOutputStream fos = new FileOutputStream(fileName);
 		byte[] buffer = new byte[1024];
 		int i = 0;
-		while((i = s3inp.read(buffer)) > 0) {
+		while ((i = reader.read(buffer, 0, 1024)) > 0) {
 			fos.write(buffer, 0, i);
 		}
 		fos.close();
 	}
-
 }

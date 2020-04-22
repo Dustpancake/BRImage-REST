@@ -83,7 +83,14 @@ public abstract class ImageProcessor {
 	}
 
 	public boolean processBody() {
-		JSONObject jobj = new JSONObject(jsonBody);
+		JSONObject jobj;
+		try {
+			jobj = new JSONObject(jsonBody);
+		} catch(Exception e) {
+			System.out.println(e);
+			info = "BAD JSON";
+			return false;
+		}
 		String value;
 		ListIterator<String> iter = keys.listIterator();
 
@@ -107,7 +114,7 @@ public abstract class ImageProcessor {
 				values.add(Double.parseDouble(value));
 				jobj.remove(key);
 			} catch(JSONException e) {
-				System.out.println(e);
+				// System.out.println(e);
 				iter.remove();
 			} catch(NullPointerException e) {
 				iter.remove();
@@ -136,7 +143,7 @@ public abstract class ImageProcessor {
 		}
 		md.update(inputUri.getBytes());
 		byte[] digest = md.digest(inputUri.getBytes());
-		outputName =  Base64.getEncoder().encodeToString(digest) + ".jpg";
+		outputName =  Base64.getEncoder().encodeToString(digest).replaceAll("[^\\w\\s]","") + ".jpg";
 	}
 
 	public String info() {

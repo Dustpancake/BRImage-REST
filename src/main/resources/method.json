@@ -8,7 +8,8 @@
 					"max":"3",
 					"min":">0",
 					"step":0.001,
-					"default":0.5
+					"default":0.5,
+					"help":"Frequency omega; controls line spacing."
 				},
 				{
 					"name":"phase",
@@ -16,7 +17,8 @@
 					"max":"1",
 					"min":">0",
 					"step":0.001,
-					"default":0.5
+					"default":0.5,
+					"help":"Controls the phase range that is used to map the pixel values into."
 				},
 				{
 					"name":"pquantize",
@@ -24,7 +26,8 @@
 					"max":"<10",
 					"min":"0",
 					"step":1,
-					"default":0
+					"default":0,
+					"help":"Post-quantize number; number of colours to quantize image to. Value of 0 is continuous mapping."
 				},
 				{
 					"name":"lowpass",
@@ -32,7 +35,8 @@
 					"max":"<1",
 					"min":"0",
 					"step":0.001,
-					"default":0.25
+					"default":0.25,
+					"help":"Set the lowpass filter amount."
 				}
 			]
 		}

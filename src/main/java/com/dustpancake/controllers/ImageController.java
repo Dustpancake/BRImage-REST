@@ -22,7 +22,6 @@ import com.dustpancake.imageio.ImageProcessor;
 
 import java.lang.Thread;
 
-import java.util.List;
 import java.util.LinkedHashMap;
 
 import com.dustpancake.propertyread.MethodReader;
@@ -39,8 +38,10 @@ public class ImageController {
 	private String imageDirectory;
 
 	@GetMapping("/interface/{method}")
-	public LinkedHashMap<String, ?> getInterface(@PathVariable("method") String method) {
-		return methodReader.getInterface(method);
+	public ResponseEntity<?> getInterface(@PathVariable("method") String method) {
+		LinkedHashMap<String, ?> content = methodReader.getInterface(method);
+		if (content == null) return new ResponseEntity<>("BAD METHOD", HttpStatus.BAD_REQUEST);
+		else return new ResponseEntity<>(content, HttpStatus.OK);
 	}
 
 	@PostMapping("/image/{method}")
@@ -53,7 +54,7 @@ public class ImageController {
 			ip = new ImplementMethod(
 				body, 
 				imageDirectory, 
-				methodReader.getConfigOf("fm")
+				methodReader.getConfigOf(method)
 			);
 
 		} catch(Exception e) { 
@@ -65,7 +66,8 @@ public class ImageController {
 		AWSs3 s3 = awscontext.S3Context();
 
 		resp = s3.getFile(ip.inputUri);
-		if(!resp.equals("")) return badResponse(resp);
+		if(resp.equals("")) return badResponse("BAD FILE");
+		ip.inputUri = resp;
 
 		
 		newUri = s3.touchBucketFile(ip.outputName);

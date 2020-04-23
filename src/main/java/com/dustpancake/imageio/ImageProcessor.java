@@ -39,11 +39,10 @@ public abstract class ImageProcessor {
 		String cmd = "brimage " + inputImage;
 		String paramVal = "0";
 		for (int i = 0; i < values.size(); i++) {
-			System.out.println(types.get(i));
 			if (types.get(i).equals("double")) {
 				paramVal = String.valueOf((double)values.get(i));
 			} else if (types.get(i).equals("int")) {
-				paramVal = String.valueOf((int)((double)values.get(i)));
+				paramVal = String.valueOf((int)(double)values.get(i));
 			}
 			cmd += " --" + keys.get(i) + " " + paramVal;
 		}
@@ -91,9 +90,7 @@ public abstract class ImageProcessor {
 			info = "BAD JSON";
 			return false;
 		}
-		String value;
-		ListIterator<String> iter = keys.listIterator();
-
+		
 		try {
 			inputUri = jobj.getString("uri");
 		} catch(Exception e) {
@@ -107,17 +104,19 @@ public abstract class ImageProcessor {
 			return false;
 		}
 		String key;
+		String value;
+		ListIterator<String> iter = keys.listIterator();
+		ListIterator<String> tyIter = types.listIterator();
 		while(iter.hasNext()) {
 			try {
 				key = iter.next();
+				tyIter.next();
 				value = jobj.getString(key);
 				values.add(Double.parseDouble(value));
 				jobj.remove(key);
-			} catch(JSONException e) {
-				// System.out.println(e);
+			} catch(JSONException | NullPointerException e) {
 				iter.remove();
-			} catch(NullPointerException e) {
-				iter.remove();
+				tyIter.remove();
 			} catch(Exception e) {
 				System.out.println(e);
 				info = "ERROR";
@@ -143,7 +142,7 @@ public abstract class ImageProcessor {
 		}
 		md.update(inputUri.getBytes());
 		byte[] digest = md.digest(inputUri.getBytes());
-		outputName =  Base64.getEncoder().encodeToString(digest).replaceAll("[^\\w\\s]","") + ".jpg";
+		outputName =  Base64.getEncoder().encodeToString(digest).replaceAll("[^\\w\\s\\.]","") + ".jpg";
 	}
 
 	public String info() {

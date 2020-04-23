@@ -32,6 +32,9 @@ public class AWSs3 {
 	@Value("${image.directory}")
 	private String imageDirectory;
 
+	@Value("${bucket.outputdir}")
+	private String bucketOutDir;
+
 	public AWSs3(AWSCredentialsProvider awscred) {
 		s3access = (AmazonS3Client)AmazonS3ClientBuilder
 			.standard()
@@ -44,17 +47,12 @@ public class AWSs3 {
 		String fileName = "";
 		try {
 			URL url = new URL(uri);
-			fileName = writeImageToFile(url);
+			if (url.getHost().contains(bucketName+".s3.")) {
+				fileName = getFromAws(url);
+			} else {
+				fileName = writeImageToFile(url);
+			}
 			System.out.println("Saved new file " + fileName);
-
-		} catch(MalformedURLException e) {
-			System.out.println(e);
-			return "";
-
-		}  catch(IOException e) {
-			// file reading went wrong
-			System.out.println(e);
-			return "";
 
 		} catch(Exception e) {
 			// anything else
@@ -64,11 +62,20 @@ public class AWSs3 {
 		return fileName;
 	}
 
+	private String getFromAws(URL url) throws AmazonServiceException, IOException {
+		String key = url.getFile().substring(1);
+		S3Object o = s3access.getObject(bucketName, key);
+		S3ObjectInputStream s3inp = o.getObjectContent();
+		String fileName = key.substring(key.lastIndexOf('/') + 1).replaceAll("[^\\w\\s\\.]","");
+		writeImageToFile(s3inp, imageDirectory+fileName);
+		return fileName;
+	}
+
 	public String touchBucketFile(String fileName) {
 		String itemUrl;
 		try {
-			s3access.putObject(bucketName, fileName, "");
-			itemUrl = s3access.getResourceUrl(bucketName, fileName);
+			s3access.putObject(bucketName, bucketOutDir + fileName, "");
+			itemUrl = s3access.getResourceUrl(bucketName, bucketOutDir + fileName);
 		} catch(AmazonServiceException e) {
 			// aws went wrong
 			System.out.println(e);
@@ -79,7 +86,7 @@ public class AWSs3 {
 
 	public boolean uploadFileToBucket(String fileName) {
 		try {
-			s3access.putObject(bucketName, fileName, new File(imageDirectory + fileName));
+			s3access.putObject(bucketName, bucketOutDir+fileName, new File(imageDirectory + fileName));
 		} catch(AmazonServiceException e) {
 			// aws went wrong
 			System.out.println(e);
@@ -92,7 +99,7 @@ public class AWSs3 {
 
 	private String writeImageToFile(URL uri) throws IOException {
 		String fileName = uri.getFile();
-		fileName = fileName.substring(fileName.lastIndexOf('/') + 1).replaceAll("[^\\w\\s]","");
+		fileName = fileName.substring(fileName.lastIndexOf('/') + 1).replaceAll("[^\\w\\s\\.]","");
 		BufferedInputStream bif = new BufferedInputStream(uri.openStream());
 		writeImageToFile(bif, imageDirectory + fileName);
 		return fileName;

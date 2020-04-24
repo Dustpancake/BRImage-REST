@@ -142,7 +142,7 @@ public abstract class ImageProcessor {
 		}
 		md.update(inputUri.getBytes());
 		byte[] digest = md.digest(inputUri.getBytes());
-		outputName =  Base64.getEncoder().encodeToString(digest).replaceAll("[^\\w\\s\\.]","") + ".jpg";
+		outputName =  Base64.getEncoder().encodeToString(digest).replaceAll("[^\\w\\.]","") + ".jpg";
 	}
 
 	public String info() {

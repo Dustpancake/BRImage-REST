@@ -22,6 +22,7 @@ import java.io.InputStream;
 
 import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URLDecoder;
 
 public class AWSs3 {
 	final private AmazonS3Client s3access;
@@ -46,6 +47,7 @@ public class AWSs3 {
 	public String getFile(String uri) {
 		String fileName = "";
 		try {
+			System.out.println("New uri: " + uri);
 			URL url = new URL(uri);
 			if (url.getHost().contains(bucketName+".s3.")) {
 				fileName = getFromAws(url);
@@ -63,10 +65,11 @@ public class AWSs3 {
 	}
 
 	private String getFromAws(URL url) throws AmazonServiceException, IOException {
-		String key = url.getFile().substring(1);
+		String key = URLDecoder.decode(url.getFile().substring(1), "UTF-8");
+		System.out.println(key);
 		S3Object o = s3access.getObject(bucketName, key);
 		S3ObjectInputStream s3inp = o.getObjectContent();
-		String fileName = key.substring(key.lastIndexOf('/') + 1).replaceAll("[^\\w\\s\\.]","");
+		String fileName = key.substring(key.lastIndexOf('/') + 1).replaceAll("[^\\w\\.]","");
 		writeImageToFile(s3inp, imageDirectory+fileName);
 		return fileName;
 	}
@@ -99,7 +102,7 @@ public class AWSs3 {
 
 	private String writeImageToFile(URL uri) throws IOException {
 		String fileName = uri.getFile();
-		fileName = fileName.substring(fileName.lastIndexOf('/') + 1).replaceAll("[^\\w\\s\\.]","");
+		fileName = fileName.substring(fileName.lastIndexOf('/') + 1).replaceAll("[^\\w\\.]","");
 		BufferedInputStream bif = new BufferedInputStream(uri.openStream());
 		writeImageToFile(bif, imageDirectory + fileName);
 		return fileName;

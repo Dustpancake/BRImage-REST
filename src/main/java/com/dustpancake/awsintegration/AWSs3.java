@@ -66,7 +66,6 @@ public class AWSs3 {
 
 	private String getFromAws(URL url) throws AmazonServiceException, IOException {
 		String key = URLDecoder.decode(url.getFile().substring(1), "UTF-8");
-		System.out.println(key);
 		S3Object o = s3access.getObject(bucketName, key);
 		S3ObjectInputStream s3inp = o.getObjectContent();
 		String fileName = key.substring(key.lastIndexOf('/') + 1).replaceAll("[^\\w\\.]","");
@@ -102,7 +101,7 @@ public class AWSs3 {
 
 	private String writeImageToFile(URL uri) throws IOException {
 		String fileName = uri.getFile();
-		fileName = fileName.substring(fileName.lastIndexOf('/') + 1).replaceAll("[^\\w\\.]","");
+		fileName = fileName.replaceAll("[^\\w\\.]","");
 		BufferedInputStream bif = new BufferedInputStream(uri.openStream());
 		writeImageToFile(bif, imageDirectory + fileName);
 		return fileName;
